@@ -1,0 +1,5 @@
+flask
+requests
+groq
+python-dotenv
+gunicorn
