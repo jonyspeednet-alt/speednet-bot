@@ -45,6 +45,9 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Gunicorn বা প্রোডাকশন সার্ভারে অ্যাপ রান করার সময় ডাটাবেস ইনিশিয়ালাইজ করা
+init_db()
+
 def add_message_to_history(sender_id, role, content):
     """ডাটাবেসে মেসেজ সংরক্ষণ করে"""
     conn = sqlite3.connect('conversations.db')
@@ -140,7 +143,7 @@ def ask_speednet_ai(user_question, summary, history):
         f"৫. **অজানা প্রশ্ন:** যদি কোনো প্রশ্নের উত্তর তোমার জানা না থাকে, তাহলে সরাসরি বলবে, 'এই মুহূর্তে আমার কাছে তথ্যটি নেই। বিস্তারিত জানতে অনুগ্রহ করে আমাদের হটলাইনে (09639333111) যোগাযোগ করুন।' কোনোভাবেই ভুল উত্তর দেবে না।\n"
         f"৬. **টেকনিক্যাল সাপোর্ট:** সাধারণ টেকনিক্যাল সমস্যার (যেমন: রাউটার রিস্টার্ট, লাল বাতি) জন্য ধাপে ধাপে (step-by-step) সমাধান দেবে। জটিল সমস্যার জন্য হটলাইনে যোগাযোগ করতে বলবে।\n\n"
         f"৭. **সহানুভূতি:** সমস্যাজনিত মেসেজে আগে দুঃখ প্রকাশ করবে।\n"
-f"৮. **লিড জেনারেশন:** নতুন সংযোগ প্রত্যাশীদের ফোন নম্বর ও এলাকা জানতে চাইবে।\n"
+        f"৮. **লিড জেনারেশন:** নতুন সংযোগ প্রত্যাশীদের ফোন নম্বর ও এলাকা জানতে চাইবে।\n"
 f"৯. **ইমোজি:** উত্তরের সাথে মানানসই ইমোজি ব্যবহার করবে।\n"
 f"১০. **নিরাপত্তা:** কখনো পাসওয়ার্ড চাইবে না।\n"
 f"১১. **সমাধান নিশ্চিতকরণ:** টেকনিক্যাল গাইড দেওয়ার পর সমাধান হয়েছে কি না জানতে চাইবে।\n"
@@ -222,23 +225,27 @@ def webhook():
 
 def process_message(sender_id, message_text):
     """AI থেকে উত্তর তৈরি করে এবং ব্যবহারকারীকে পাঠায়"""
-    # টাইপিং ইন্ডিকেটর চালু করা
-    send_action(sender_id, "typing_on")
-    
-    # ডাটাবেস থেকে সামারি এবং সাম্প্রতিক আলোচনা নিয়ে আসা
-    summary = get_summary(sender_id)
-    history = get_conversation_history(sender_id, limit=5)
-    
-    # AI থেকে উত্তর নেওয়া
-    response_text = ask_speednet_ai(message_text, summary, history)
-    
-    # বর্তমান ইউজারের মেসেজ এবং AI-এর উত্তর ডাটাবেসে সেভ করা
-    add_message_to_history(sender_id, "user", message_text)
-    add_message_to_history(sender_id, "assistant", response_text)
-    
-    # টাইপিং ইন্ডিকেটর বন্ধ করা
-    send_action(sender_id, "typing_off")
-    
+    try:
+        # টাইপিং ইন্ডিকেটর চালু করা
+        send_action(sender_id, "typing_on")
+        
+        # ডাটাবেস থেকে সামারি এবং সাম্প্রতিক আলোচনা নিয়ে আসা
+        summary = get_summary(sender_id)
+        history = get_conversation_history(sender_id, limit=5)
+        
+        # AI থেকে উত্তর নেওয়া
+        response_text = ask_speednet_ai(message_text, summary, history)
+        
+        # বর্তমান ইউজারের মেসেজ এবং AI-এর উত্তর ডাটাবেসে সেভ করা
+        add_message_to_history(sender_id, "user", message_text)
+        add_message_to_history(sender_id, "assistant", response_text)
+        
+        # টাইপিং ইন্ডিকেটর বন্ধ করা
+        send_action(sender_id, "typing_off")
+    except Exception as e:
+        logging.error(f"Error in process_message: {e}")
+        response_text = "দুঃখিত, একটি কারিগরি সমস্যা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।"
+
     # কুইক রিপ্লাই বাটন তৈরি
     quick_replies = [
         {
