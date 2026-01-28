@@ -342,12 +342,24 @@ def process_message(sender_id, message_text):
 
     # প্যাকেজের জন্য ইমেজ পাঠানো
     if any(keyword in message_lower for keyword in ["প্যাকেজ", "দাম", "price", "package"]):
-        # ৩. ইমেজ এবং ডকুমেন্ট সাপোর্ট: প্যাকেজের জন্য ইমেজ পাঠানো
-        # এই URLটি আপনার প্যাকেজ চার্টের আসল URL দিয়ে পরিবর্তন করতে হবে
-        package_image_url = "https://i.ibb.co/tQk3VzW/speednet-packages.png" # Placeholder URL
-        send_image(sender_id, package_image_url, "আমাদের প্যাকেজগুলো সম্পর্কে আরও জানতে চান?")
+        # ৩. ইমেজ এবং ডকুমেন্ট সাপোর্ট: প্যাকেজের জন্য ইমেজ পাঠানো (টেক্সট ফলব্যাক সহ)
+        # নিচের URLটি একটি ব্রোকেন প্লেসহোল্ডার। আপনার প্যাকেজ চার্টের সঠিক URL দিয়ে এটি পরিবর্তন করুন।
+        # package_image_url = "https://your-new-image-url.com/packages.png"
+        
+        # # --- ইমেজ পাঠানোর কোড (সঠিক URL পেলে এই অংশটি আনকমেন্ট করুন এবং নিচের টেক্সট অংশটি মুছে দিন) ---
+        # send_image(sender_id, package_image_url, "আমাদের প্যাকেজগুলো সম্পর্কে আরও জানতে চান?")
+        # add_message_to_history(sender_id, "user", message_text)
+        # add_message_to_history(sender_id, "assistant", "[প্যাকেজের ছবি পাঠানো হয়েছে]")
+
+        # --- টেক্সট-ভিত্তিক ফলব্যাক (যেহেতু ইমেজ URL কাজ করছে না) ---
+        package_text = (
+            "আমাদের প্যাকেজগুলো নিচে দেওয়া হলো:\n"
+            "- 20 Mbps ➝ মাত্র 525 টাকা (ভ্যাট সহ)\n- 30 Mbps ➝ মাত্র 630 টাকা (ভ্যাট সহ)\n- 50 Mbps ➝ মাত্র 785 টাকা (ভ্যাট সহ)\n- 80 Mbps ➝ মাত্র 1050 টাকা (ভ্যাট সহ)\n- 100 Mbps ➝ মাত্র 1205 টাকা (ভ্যাট সহ)\n- 150 Mbps ➝ মাত্র 1730 টাকা (ভ্যাট সহ)\n\n"
+            "সব প্যাকেজে YouTube/BDIX/Facebook/FTP স্পিড 100 Mbps পর্যন্ত পাওয়া যায়।"
+        )
+        send_message_with_quick_replies(sender_id, package_text)
         add_message_to_history(sender_id, "user", message_text)
-        add_message_to_history(sender_id, "assistant", "[প্যাকেজের ছবি পাঠানো হয়েছে]")
+        add_message_to_history(sender_id, "assistant", package_text)
         return
 
     # অন্যান্য কীওয়ার্ডের জন্য ফিক্সড উত্তর
