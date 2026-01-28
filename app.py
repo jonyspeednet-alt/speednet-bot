@@ -1,6 +1,7 @@
 import os
 import requests
 import logging
+import threading
 from flask import Flask, request, jsonify
 from groq import Groq
 from dotenv import load_dotenv
@@ -16,6 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
+FACEBOOK_API_VERSION = os.getenv("FACEBOOK_API_VERSION", "v19.0")
 
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -63,24 +65,39 @@ def webhook():
             for messaging_event in entry.get("messaging", []):
                 if messaging_event.get("message"):
                     sender_id = messaging_event["sender"]["id"]
-                    message_text = messaging_event["message"].get("text")
-                    
+                    message = messaging_event["message"]
+                    message_text = message.get("text")
+
                     if message_text:
-                        # AI থেকে উত্তর নেওয়া
-                        response_text = ask_speednet_ai(message_text)
-                        # ফেসবুকে রিপ্লাই পাঠানো
-                        send_message(sender_id, response_text)
+                        # ব্যাকগ্রাউন্ডে মেসেজ প্রসেস করার জন্য থ্রেড তৈরি
+                        thread = threading.Thread(target=process_message, args=(sender_id, message_text))
+                        thread.start()
+                    else:
+                        # যদি টেক্সট মেসেজ না হয়
+                        send_message(sender_id, "দুঃখিত, আমি শুধু টেক্সট মেসেজ বুঝতে পারি।")
+
     return "EVENT_RECEIVED", 200
+
+def process_message(sender_id, message_text):
+    """AI থেকে উত্তর তৈরি করে এবং ব্যবহারকারীকে পাঠায়"""
+    # টাইপিং ইন্ডিকেটর চালু করা
+    send_action(sender_id, "typing_on")
+
+    # AI থেকে উত্তর নেওয়া
+    response_text = ask_speednet_ai(message_text)
+
+    # টাইপিং ইন্ডিকেটর বন্ধ করা
+    send_action(sender_id, "typing_off")
+
+    # ফেসবুকে রিপ্লাই পাঠানো
+    send_message(sender_id, response_text)
 
 def send_message(recipient_id, message_text):
     params = {"access_token": PAGE_ACCESS_TOKEN}
     headers = {"Content-Type": "application/json"}
-    data = {
-        "recipient": {"id": recipient_id},
-        "message": {"text": message_text}
-    }
+    data = {"recipient": {"id": recipient_id}, "message": {"text": message_text}}
     try:
-        response = requests.post("https://graph.facebook.com/v19.0/me/messages", params=params, headers=headers, json=data)
+        response = requests.post(f"https://graph.facebook.com/{FACEBOOK_API_VERSION}/me/messages", params=params, headers=headers, json=data)
         response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
         logging.info(f"Message sent to {recipient_id}")
     except requests.exceptions.RequestException as e:
@@ -89,10 +106,21 @@ def send_message(recipient_id, message_text):
         if 'response' in locals() and response.text:
             logging.error(f"Response Body: {response.text}")
 
+def send_action(recipient_id, action):
+    """Sender action (e.g., typing_on, typing_off) পাঠায়"""
+    params = {"access_token": PAGE_ACCESS_TOKEN}
+    headers = {"Content-Type": "application/json"}
+    data = {"recipient": {"id": recipient_id}, "sender_action": action}
+    try:
+        requests.post(f"https://graph.facebook.com/{FACEBOOK_API_VERSION}/me/messages", params=params, headers=headers, json=data).raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error sending action to {recipient_id}: {e}")
+
 @app.route("/", methods=["GET"])
 def home():
     return "স্পিডনেট এআই সার্ভার সচল আছে!"
 
 if __name__ == "__main__":
     print("--- স্পিডনেট এআই সার্ভার চালু হচ্ছে ---")
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
+    is_debug = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=is_debug)
