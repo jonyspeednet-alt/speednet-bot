@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      # ডকার কন্টেইনারের ভেতর ডাটাবেস হোস্ট হলো 'db'
+      - DATABASE_URL=postgresql://postgres:password@db:5432/speednet_db
+      - FLASK_DEBUG=False
+    env_file:
+      - .env  # আপনার .env ফাইল থেকে বাকি সব ভেরিয়েবল (API Keys) লোড করবে
+    depends_on:
+      - db
+    restart: on-failure
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: speednet_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

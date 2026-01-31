@@ -63,10 +63,11 @@ def init_db():
     # SaaS-এর জন্য কোম্পানি টেবিল
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS companies (
-            page_id TEXT PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
+            page_id VARCHAR(255) UNIQUE NOT NULL,
             access_token TEXT NOT NULL,
-            business_info TEXT NOT NULL,
-            bot_name TEXT DEFAULT 'AI Assistant'
+            business_info TEXT,
+            bot_name VARCHAR(255)
         )
     ''')
 
