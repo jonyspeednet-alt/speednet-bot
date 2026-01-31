@@ -133,6 +133,10 @@
             color: #6b7280;
             cursor: not-allowed;
         }
+        .chat-box { height: 300px; overflow-y: auto; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 10px; }
+        .chat-bubble { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 0.9rem; line-height: 1.4; }
+        .chat-user { background: #e0e7ff; color: #374151; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .chat-bot { background: #ffffff; color: #111827; align-self: flex-start; border: 1px solid #e5e7eb; border-bottom-left-radius: 2px; }
     </style>
 </head>
 <body>
@@ -147,60 +151,84 @@
         <div id="fb-root"></div>
         <div class="dashboard-card">
             <div class="text-center">
-                <h2 class="card-title">বট কনফিগারেশন</h2>
-                <p class="card-subtitle">আপনার ফেসবুক পেজ কানেক্ট করুন এবং এআই অ্যাসিস্ট্যান্ট সেটআপ করুন</p>
+                <h2 class="card-title">SpeedNet AI সেটআপ</h2>
+                <p class="card-subtitle" id="step-subtitle">আপনার ফেসবুক পেজ কানেক্ট করে বট চালু করুন</p>
             </div>
             
-            <!-- Facebook Login Section -->
-            <div class="d-grid gap-2 mb-4">
-                <button id="fbLoginBtn" class="btn btn-facebook btn-lg" onclick="fbLogin()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"/>
-                    </svg>
-                    ফেসবুক দিয়ে লগইন করুন
-                </button>
-            </div>
-
-            <div id="pageSelectContainer" class="mb-4 d-none">
-                <label for="pageSelect" class="form-label">পেজ নির্বাচন করুন</label>
-                <select id="pageSelect" class="form-select" onchange="fillPageDetails()">
-                    <option value="">-- পেজ বাছাই করুন --</option>
-                </select>
-            </div>
-
-            <div class="section-divider">
-                <span>অথবা ম্যানুয়ালি পূরণ করুন</span>
-            </div>
-
-            <form id="connectForm">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label for="page_id" class="form-label">Page ID</label>
-                        <input type="text" class="form-control" id="page_id" required placeholder="1000xxxxxx" readonly>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="bot_name" class="form-label">বটের নাম</label>
-                        <input type="text" class="form-control" id="bot_name" value="AI Assistant" placeholder="যেমন: স্পিডি">
-                    </div>
+            <!-- Step 1: Login -->
+            <div id="step-1">
+                <div class="d-grid gap-2 mb-4">
+                    <button id="fbLoginBtn" class="btn btn-facebook btn-lg" onclick="fbLogin()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"/>
+                        </svg>
+                        ফেসবুক দিয়ে লগইন করুন
+                    </button>
                 </div>
-                
-                <div class="mt-3 mb-3">
-                    <label for="access_token" class="form-label">Page Access Token</label>
-                    <input type="text" class="form-control" id="access_token" required placeholder="EAAG..." readonly>
+                <div class="text-center text-muted">
+                    <small>লগইন করার পর আপনার পেজ সিলেক্ট করতে হবে।</small>
                 </div>
-                
-                <div class="mb-4">
-                    <label for="business_info" class="form-label">ব্যবসার তথ্য (Training Data)</label>
-                    <textarea class="form-control" id="business_info" rows="6" required placeholder="আপনার ব্যবসার তথ্য, প্যাকেজ, ঠিকানা, অফার ইত্যাদি বিস্তারিত লিখুন..."></textarea>
-                    <div class="form-text text-muted mt-2">
-                        <small>ℹ️ এই তথ্যের ওপর ভিত্তি করেই এআই গ্রাহকদের প্রশ্নের উত্তর দেবে।</small>
+            </div>
+
+            <!-- Step 2: Select Page -->
+            <div id="step-2" class="d-none">
+                <h5 class="mb-3">আপনার পেজ সিলেক্ট করুন:</h5>
+                <div id="pageList" class="list-group mb-3">
+                    <!-- Page items will be injected here -->
+                </div>
+                <button class="btn btn-outline-secondary w-100" onclick="resetStep()">← ফিরে যান</button>
+            </div>
+
+            <!-- Step 3: Configure -->
+            <div id="step-3" class="d-none">
+                <div class="alert alert-info d-flex align-items-center" role="alert">
+                    <div>
+                        <strong>সংযুক্ত পেজ:</strong> <span id="selectedPageName"></span>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 btn-lg">
-                    সেভ ও কানেক্ট করুন
-                </button>
-            </form>
+                <form id="connectForm">
+                    <input type="hidden" id="page_id">
+                    <input type="hidden" id="access_token">
+
+                    <div class="mb-3">
+                        <label for="bot_name" class="form-label">বটের নাম (Bot Name)</label>
+                        <input type="text" class="form-control" id="bot_name" value="AI Assistant" placeholder="যেমন: স্পিডি" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="business_info" class="form-label">ব্যবসার তথ্য (Training Data)</label>
+                        <textarea class="form-control" id="business_info" rows="6" required placeholder="আপনার ব্যবসার তথ্য, প্যাকেজ, ঠিকানা, অফার ইত্যাদি বিস্তারিত লিখুন..."></textarea>
+                        <div class="form-text text-muted mt-2">
+                            <small>ℹ️ এই তথ্যের ওপর ভিত্তি করেই এআই গ্রাহকদের প্রশ্নের উত্তর দেবে।</small>
+                        </div>
+                    </div>
+
+                    <!-- Test Chat Section -->
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom-0 pt-3">
+                            <h6 class="mb-0 fw-bold">🤖 টেস্ট চ্যাট (Preview)</h6>
+                            <small class="text-muted">সেভ করার আগেই বটের উত্তর যাচাই করুন</small>
+                        </div>
+                        <div class="card-body">
+                            <div id="chatBox" class="chat-box mb-3">
+                                <div class="text-center text-muted mt-5"><small>বটের সাথে কথা বলতে নিচে লিখুন...</small></div>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" id="testMsgInput" class="form-control" placeholder="এখানে প্রশ্ন লিখুন..." onkeypress="handleEnter(event)">
+                                <button class="btn btn-secondary" type="button" onclick="sendTestMessage()">পাঠান</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
+                        বট চালু করুন (Start Bot)
+                    </button>
+
+                    <button type="button" class="btn btn-outline-danger w-100" onclick="disconnectPage()">❌ ডিসকানেক্ট করুন (Disconnect Page)</button>
+                </form>
+            </div>
+
             <div id="message" class="mt-4 text-center"></div>
         </div>
     </div>
@@ -213,25 +241,30 @@
     <script>
         // --- Facebook SDK Initialization ---
         window.fbAsyncInit = function() {
-            const appId = '{{ app_id }}';
-            if (!appId || appId === 'None' || appId === '') {
-                console.error('Facebook App ID is missing!');
-                alert('সতর্কতা: FACEBOOK_APP_ID পাওয়া যায়নি। .env ফাইলে বা Render Environment-এ এটি সেট করুন।');
-                return;
-            }
-            FB.init({
-                appId      : appId,
-                cookie     : true,
-                xfbml      : true,
-                version    : 'v19.0'
-            });
+            fetch('/config')
+                .then(response => response.json())
+                .then(data => {
+                    const appId = data.facebook_app_id;
+                    if (!appId || appId === 'None' || appId === '') {
+                        console.error('Facebook App ID is missing!');
+                        alert('সতর্কতা: FACEBOOK_APP_ID পাওয়া যায়নি। .env ফাইলে বা Render Environment-এ এটি সেট করুন।');
+                        return;
+                    }
+                    FB.init({
+                        appId      : appId,
+                        cookie     : true,
+                        xfbml      : true,
+                        version    : 'v19.0'
+                    });
+                })
+                .catch(error => console.error('Error loading config:', error));
         };
 
         (function(d, s, id){
             var js, fjs = d.getElementsByTagName(s)[0];
             if (d.getElementById(id)) {return;}
             js = d.createElement(s); js.id = id;
-            js.src = "https://connect.facebook.net/en_US/sdk.js";
+            js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0";
             fjs.parentNode.insertBefore(js, fjs);
         }(document, 'script', 'facebook-jssdk'));
 
@@ -255,30 +288,55 @@
         function fetchPages() {
             FB.api('/me/accounts', function(response) {
                 if (response && !response.error) {
-                    const select = document.getElementById('pageSelect');
-                    const container = document.getElementById('pageSelectContainer');
+                    const pages = response.data;
+                    if (pages.length === 0) {
+                        alert("আপনার আইডিতে কোনো ফেসবুক পেজ পাওয়া যায়নি।");
+                        return;
+                    }
                     
-                    select.innerHTML = '<option value="">-- পেজ বাছাই করুন --</option>';
-                    response.data.forEach(page => {
-                        const option = document.createElement('option');
-                        option.value = page.id;
-                        option.text = page.name;
-                        option.setAttribute('data-token', page.access_token);
-                        select.appendChild(option);
-                    });
-                    container.classList.remove('d-none');
+                    // If only one page, go directly to config
+                    if (pages.length === 1) {
+                        selectPage(pages[0]);
+                    } else {
+                        // Show page selection list
+                        showStep(2);
+                        const list = document.getElementById('pageList');
+                        list.innerHTML = '';
+                        pages.forEach(page => {
+                            const btn = document.createElement('button');
+                            btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                            btn.innerHTML = `<span>${page.name}</span> <span class="badge bg-primary rounded-pill">Select</span>`;
+                            btn.onclick = () => selectPage(page);
+                            list.appendChild(btn);
+                        });
+                    }
                 }
             });
         }
 
-        // --- Fill Form ---
-        function fillPageDetails() {
-            const select = document.getElementById('pageSelect');
-            const selectedOption = select.options[select.selectedIndex];
-            if (selectedOption.value) {
-                document.getElementById('page_id').value = selectedOption.value;
-                document.getElementById('access_token').value = selectedOption.getAttribute('data-token');
-            }
+        function selectPage(page) {
+            document.getElementById('page_id').value = page.id;
+            document.getElementById('access_token').value = page.access_token;
+            document.getElementById('selectedPageName').innerText = page.name;
+            showStep(3);
+        }
+
+        function showStep(stepNumber) {
+            document.getElementById('step-1').classList.add('d-none');
+            document.getElementById('step-2').classList.add('d-none');
+            document.getElementById('step-3').classList.add('d-none');
+            document.getElementById('message').innerText = '';
+            
+            document.getElementById(`step-${stepNumber}`).classList.remove('d-none');
+            
+            const subtitle = document.getElementById('step-subtitle');
+            if(stepNumber === 1) subtitle.innerText = "আপনার ফেসবুক পেজ কানেক্ট করে বট চালু করুন";
+            if(stepNumber === 2) subtitle.innerText = "বট কানেক্ট করার জন্য একটি পেজ বেছে নিন";
+            if(stepNumber === 3) subtitle.innerText = "বটের নাম এবং তথ্য দিয়ে সেটআপ সম্পন্ন করুন";
+        }
+
+        function resetStep() {
+            showStep(1);
         }
 
         document.getElementById('connectForm').addEventListener('submit', async function(e) {
@@ -316,9 +374,77 @@
                 msgDiv.innerHTML = `<div class="alert alert-danger">⚠️ Network Error: ${error.message}</div>`;
             } finally {
                 btn.disabled = false;
-                btn.innerText = 'সেভ ও কানেক্ট করুন';
+                btn.innerText = 'বট চালু করুন (Start Bot)';
             }
         });
+
+        // --- Test Chat Logic ---
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendTestMessage();
+        }
+
+        async function sendTestMessage() {
+            const input = document.getElementById('testMsgInput');
+            const msg = input.value.trim();
+            const businessInfo = document.getElementById('business_info').value;
+            const botName = document.getElementById('bot_name').value;
+            const chatBox = document.getElementById('chatBox');
+
+            if (!msg) return;
+            if (!businessInfo) { alert("দয়া করে আগে ব্যবসার তথ্য পূরণ করুন।"); return; }
+
+            // User Message
+            if (chatBox.querySelector('.text-center')) chatBox.innerHTML = '';
+            chatBox.innerHTML += `<div class="chat-bubble chat-user">${msg}</div>`;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Loading State
+            const loadingId = 'loading-' + Date.now();
+            chatBox.innerHTML += `<div id="${loadingId}" class="chat-bubble chat-bot">...</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/test-chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg, business_info: businessInfo, bot_name: botName })
+                });
+                const data = await response.json();
+                document.getElementById(loadingId).remove();
+                chatBox.innerHTML += `<div class="chat-bubble chat-bot">${data.response || 'Error getting response'}</div>`;
+            } catch (e) {
+                document.getElementById(loadingId).remove();
+                chatBox.innerHTML += `<div class="chat-bubble chat-bot text-danger">Error: ${e.message}</div>`;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // --- Disconnect Logic ---
+        async function disconnectPage() {
+            const pageId = document.getElementById('page_id').value;
+            if (!pageId) return;
+
+            if (!confirm("আপনি কি নিশ্চিত যে আপনি এই পেজটি ডিসকানেক্ট করতে চান? এর ফলে বট আর রিপ্লাই দেবে না।")) return;
+
+            try {
+                const response = await fetch('/disconnect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page_id: pageId })
+                });
+                if (response.ok) {
+                    alert("পেজ ডিসকানেক্ট করা হয়েছে।");
+                    resetStep();
+                    document.getElementById('connectForm').reset();
+                    document.getElementById('chatBox').innerHTML = '<div class="text-center text-muted mt-5"><small>বটের সাথে কথা বলতে নিচে লিখুন...</small></div>';
+                } else {
+                    alert("ডিসকানেক্ট করতে সমস্যা হয়েছে।");
+                }
+            } catch (e) {
+                alert("Network Error: " + e.message);
+            }
+        }
     </script>
 </body>
 </html>

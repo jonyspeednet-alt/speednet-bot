@@ -631,7 +631,48 @@ def home():
 # --- Dashboard Route ---
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html", app_id=FACEBOOK_APP_ID)
+    return render_template("dashboard.html")
+
+@app.route("/config")
+def config():
+    """Frontend-এর জন্য কনফিগারেশন প্রদান করে"""
+    return jsonify({"facebook_app_id": os.getenv("FACEBOOK_APP_ID", "")})
+
+@app.route("/test-chat", methods=["POST"])
+def test_chat():
+    """ডাটাবেসে সেভ করার আগে বটের উত্তর প্রিভিউ করার জন্য"""
+    data = request.json
+    message_text = data.get("message")
+    business_info = data.get("business_info")
+    bot_name = data.get("bot_name", "AI Assistant")
+
+    if not message_text or not business_info:
+        return jsonify({"error": "Message and Business Info required"}), 400
+
+    # ডাইনামিক কন্টেক্সট পার্সিং (সরাসরি ইনপুট থেকে)
+    parsed_context = parse_isp_context(business_info)
+    dynamic_context = get_dynamic_context(message_text, parsed_context)
+    
+    # এআই রেসপন্স জেনারেট (সামারি ছাড়া, কারণ এটি টেস্ট)
+    response_text = ask_speednet_ai(message_text, "", dynamic_context, bot_name, None, "Test User")
+    
+    return jsonify({"response": response_text})
+
+@app.route("/disconnect", methods=["POST"])
+def disconnect_page():
+    """কানেক্ট করা পেজ ডাটাবেস থেকে মুছে ফেলে"""
+    data = request.json
+    page_id = data.get("page_id")
+    
+    if not page_id:
+        return jsonify({"error": "Page ID required"}), 400
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM companies WHERE page_id = %s', (page_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success", "message": "Page disconnected successfully."}), 200
 
 # --- Admin Route for SaaS (Optional) ---
 @app.route("/register", methods=["POST"])
