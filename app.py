@@ -631,7 +631,7 @@ def home():
 # --- Dashboard Route ---
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", app_id=FACEBOOK_APP_ID)
 
 @app.route("/config")
 def config():

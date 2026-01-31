@@ -206,9 +206,12 @@
 
                     <!-- Test Chat Section -->
                     <div class="card mb-4 border-0 shadow-sm">
-                        <div class="card-header bg-white border-bottom-0 pt-3">
-                            <h6 class="mb-0 fw-bold">🤖 টেস্ট চ্যাট (Preview)</h6>
-                            <small class="text-muted">সেভ করার আগেই বটের উত্তর যাচাই করুন</small>
+                        <div class="card-header bg-white border-bottom-0 pt-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0 fw-bold">🤖 টেস্ট চ্যাট (Preview)</h6>
+                                <small class="text-muted">সেভ করার আগেই বটের উত্তর যাচাই করুন</small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearChat()">🗑️ Clear Chat</button>
                         </div>
                         <div class="card-body">
                             <div id="chatBox" class="chat-box mb-3">
@@ -241,23 +244,18 @@
     <script>
         // --- Facebook SDK Initialization ---
         window.fbAsyncInit = function() {
-            fetch('/config')
-                .then(response => response.json())
-                .then(data => {
-                    const appId = data.facebook_app_id;
-                    if (!appId || appId === 'None' || appId === '') {
-                        console.error('Facebook App ID is missing!');
-                        alert('সতর্কতা: FACEBOOK_APP_ID পাওয়া যায়নি। .env ফাইলে বা Render Environment-এ এটি সেট করুন।');
-                        return;
-                    }
-                    FB.init({
-                        appId      : appId,
-                        cookie     : true,
-                        xfbml      : true,
-                        version    : 'v19.0'
-                    });
-                })
-                .catch(error => console.error('Error loading config:', error));
+            const appId = '{{ app_id }}';
+            if (!appId || appId === 'None' || appId === '') {
+                console.error('Facebook App ID is missing!');
+                alert('সতর্কতা: FACEBOOK_APP_ID পাওয়া যায়নি। .env ফাইলে বা Render Environment-এ এটি সেট করুন।');
+                return;
+            }
+            FB.init({
+                appId      : appId,
+                cookie     : true,
+                xfbml      : true,
+                version    : 'v19.0'
+            });
         };
 
         (function(d, s, id){
@@ -270,6 +268,7 @@
 
         // --- Login Logic ---
         function fbLogin() {
+            console.log("Login button clicked");
             if (typeof FB === 'undefined') {
                 alert("Facebook SDK লোড হয়নি। দয়া করে পেজটি রিফ্রেশ করুন অথবা অ্যাডব্লকার বন্ধ করুন।");
                 return;
@@ -444,6 +443,10 @@
             } catch (e) {
                 alert("Network Error: " + e.message);
             }
+        }
+
+        function clearChat() {
+            document.getElementById('chatBox').innerHTML = '<div class="text-center text-muted mt-5"><small>বটের সাথে কথা বলতে নিচে লিখুন...</small></div>';
         }
     </script>
 </body>
