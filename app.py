@@ -12,7 +12,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__)
+# টেমপ্লেট ফোল্ডার হিসেবে বর্তমান ডিরেক্টরি (.) সেট করা হচ্ছে যাতে dashboard.html খুঁজে পায়
+app = Flask(__name__, template_folder='.')
 
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
