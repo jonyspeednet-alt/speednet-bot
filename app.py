@@ -659,9 +659,16 @@ def register_company():
     finally:
         conn.close()
 
-if __name__ == "__main__":
+# --- Database Initialization (Run on App Startup) ---
+# Gunicorn বা প্রোডাকশন সার্ভারে __main__ ব্লক রান হয় না, তাই এখানে কল করতে হবে।
+try:
     init_db()  # অ্যাপ চালু হওয়ার সময় ডাটাবেস ইনিশিয়ালাইজ করা
     seed_db()  # ডিফল্ট কোম্পানি সিড করা
-    print("--- স্পিড নেট এআই সার্ভার চালু হচ্ছে ---")
+    logging.info("Database initialized and seeded successfully.")
+except Exception as e:
+    logging.error(f"Startup DB Error: {e}")
+
+if __name__ == "__main__":
+    print("--- স্পিড নেট এআই সার্ভার (Local) চালু হচ্ছে ---")
     is_debug = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=is_debug)
