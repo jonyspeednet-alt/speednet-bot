@@ -654,6 +654,18 @@ def register_company():
             ON CONFLICT (page_id) DO UPDATE SET access_token = EXCLUDED.access_token, business_info = EXCLUDED.business_info, bot_name = EXCLUDED.bot_name
         ''', (page_id, access_token, business_info, bot_name))
         conn.commit()
+
+        # --- অটোমেটিক সাবস্ক্রিপশন লজিক ---
+        # পেজটিকে অ্যাপের সাথে সাবস্ক্রাইব করা হচ্ছে যাতে মেসেজ ওয়েবহুকে আসে
+        subscribe_url = f"https://graph.facebook.com/{FACEBOOK_API_VERSION}/{page_id}/subscribed_apps"
+        subscribe_params = {
+            "access_token": access_token,
+            "subscribed_fields": "messages,messaging_postbacks"
+        }
+        sub_resp = requests.post(subscribe_url, params=subscribe_params)
+        if sub_resp.status_code != 200:
+            logging.error(f"Failed to subscribe page {page_id}: {sub_resp.text}")
+
         return jsonify({"status": "success", "message": f"Company {page_id} registered."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
