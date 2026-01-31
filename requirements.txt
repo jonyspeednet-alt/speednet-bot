@@ -3,3 +3,4 @@ requests
 groq
 python-dotenv
 gunicorn
+psycopg2-binary
