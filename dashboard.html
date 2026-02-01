@@ -20,25 +20,22 @@
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            overflow-x: hidden;
         }
-        .navbar {
-            background-color: var(--card-bg);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 1rem 0;
-        }
-        .navbar-brand {
-            font-weight: 700;
-            color: var(--primary-color) !important;
-            font-size: 1.5rem;
+        .sidebar {
+            min-height: 100vh;
+            background: var(--card-bg);
+            border-right: 1px solid #e5e7eb;
+            width: 260px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
         }
         .main-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem 1rem;
+            margin-left: 260px;
+            padding: 2rem;
+            width: calc(100% - 260px);
         }
         .dashboard-card {
             background: var(--card-bg);
@@ -46,7 +43,8 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
             padding: 2.5rem;
             width: 100%;
-            max-width: 650px;
+            max-width: 800px;
+            margin: 0 auto;
             border: 1px solid rgba(0,0,0,0.05);
         }
         .card-title {
@@ -137,15 +135,31 @@
         .chat-bubble { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 0.9rem; line-height: 1.4; }
         .chat-user { background: #e0e7ff; color: #374151; align-self: flex-end; border-bottom-right-radius: 2px; }
         .chat-bot { background: #ffffff; color: #111827; align-self: flex-start; border: 1px solid #e5e7eb; border-bottom-left-radius: 2px; }
+        
+        .nav-link {
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .nav-link:hover, .nav-link.active {
+            background-color: #e0e7ff;
+            color: var(--primary-color);
+        }
+        .nav-link i { margin-right: 10px; }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="container">
-            <span class="navbar-brand">⚡ SpeedNet AI</span>
+    <!-- Sidebar -->
+    <div class="sidebar p-4 d-flex flex-column">
+        <h4 class="fw-bold text-primary mb-5">⚡ SpeedNet AI</h4>
+        <div class="nav flex-column nav-pills flex-grow-1">
+            <a href="/dashboard" class="nav-link active">🏠 ড্যাশবোর্ড</a>
+            <a href="#" class="nav-link" onclick="document.getElementById('connectedPagesSection').scrollIntoView({behavior: 'smooth'})">🔗 সংযুক্ত পেজসমূহ</a>
         </div>
-    </nav>
+        <button onclick="fbLogout()" class="btn btn-outline-danger mt-auto w-100">🚪 লগআউট</button>
+    </div>
 
     <div class="main-container">
         <div id="fb-root"></div>
@@ -173,7 +187,7 @@
                     </button>
                 </div>
                 <div class="text-center text-muted">
-                    <small>লগইন করার পর আপনার পেজ সিলেক্ট করতে হবে।</small>
+                    <small>লগইন পপআপে "Select All" অথবা আপনার কাঙ্ক্ষিত পেজটি সিলেক্ট করতে ভুলবেন না।</small>
                 </div>
             </div>
 
@@ -188,12 +202,12 @@
 
             <div id="message" class="mt-4 text-center"></div>
         </div>
+        
+        <!-- Footer -->
+        <footer class="text-center py-4 text-muted mt-auto" style="font-size: 0.85rem;">
+            &copy; 2024 SpeedNet AI. All rights reserved.
+        </footer>
     </div>
-
-    <!-- Footer -->
-    <footer class="text-center py-4 text-muted" style="font-size: 0.85rem;">
-        &copy; 2024 SpeedNet AI. All rights reserved.
-    </footer>
 
     <script>
         // --- Facebook SDK Initialization ---
@@ -267,7 +281,16 @@
                 } else {
                     console.log('User cancelled login or did not fully authorize.');
                 }
-            }, {scope: 'pages_show_list,pages_messaging,pages_manage_metadata'});
+            }, {
+                scope: 'pages_show_list,pages_messaging,pages_manage_metadata',
+                auth_type: 'reauthenticate' // Force re-login to allow selecting pages again
+            });
+        }
+
+        function fbLogout() {
+            FB.logout(function(response) {
+                window.location.reload();
+            });
         }
 
         // --- Fetch Pages ---
@@ -276,7 +299,8 @@
                 if (response && !response.error) {
                     const pages = response.data;
                     if (pages.length === 0) {
-                        alert("আপনার আইডিতে কোনো ফেসবুক পেজ পাওয়া যায়নি।");
+                        alert("আপনার আইডিতে কোনো ফেসবুক পেজ পাওয়া যায়নি।\n\nসম্ভাব্য কারণ:\n১. আপনি লগইন করার সময় পেজ সিলেক্ট করেননি।\n২. আপনার আইডিতে কোনো পেজ নেই।\n\nঅনুগ্রহ করে আবার লগইন করুন এবং পেজ পারমিশন দিন।");
+                        fbLogout(); // Logout so they can try again
                         return;
                     }
                     
@@ -296,6 +320,9 @@
                             list.appendChild(btn);
                         });
                     }
+                } else {
+                    console.error("Error fetching pages:", response.error);
+                    alert("পেজ লিস্ট আনতে সমস্যা হয়েছে: " + (response.error ? response.error.message : "Unknown error"));
                 }
             });
         }
