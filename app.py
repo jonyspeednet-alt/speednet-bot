@@ -23,7 +23,8 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 # PAGE_ACCESS_TOKEN এখন ডাইনামিকালি ডাটাবেস থেকে আসবে, তবে সিডিংয়ের জন্য এনভায়রনমেন্ট থেকে নেওয়া হতে পারে
 FACEBOOK_API_VERSION = os.getenv("FACEBOOK_API_VERSION", "v19.0")
-FACEBOOK_APP_ID = os.getenv("1416912693406734") # ড্যাশবোর্ডের জন্য অ্যাপ আইডি
+FACEBOOK_APP_ID = os.getenv("FACEBOOK_APP_ID")
+ # ড্যাশবোর্ডের জন্য অ্যাপ আইডি
 
 # --- Globals for Throttling ---
 user_last_message_time = {}
