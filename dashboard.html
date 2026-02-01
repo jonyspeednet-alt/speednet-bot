@@ -150,6 +150,13 @@
     <div class="main-container">
         <div id="fb-root"></div>
         <div class="dashboard-card">
+            <!-- Connected Pages Section -->
+            <div id="connectedPagesSection" class="d-none mb-4">
+                <h5 class="fw-bold mb-3">সংযুক্ত পেজসমূহ (Connected Pages)</h5>
+                <div class="list-group mb-3" id="connectedPagesList"></div>
+                <div class="section-divider"><span>অথবা নতুন পেজ সেটআপ করুন</span></div>
+            </div>
+
             <div class="text-center">
                 <h2 class="card-title">SpeedNet AI সেটআপ</h2>
                 <p class="card-subtitle" id="step-subtitle">আপনার ফেসবুক পেজ কানেক্ট করে বট চালু করুন</p>
@@ -177,59 +184,6 @@
                     <!-- Page items will be injected here -->
                 </div>
                 <button class="btn btn-outline-secondary w-100" onclick="resetStep()">← ফিরে যান</button>
-            </div>
-
-            <!-- Step 3: Configure -->
-            <div id="step-3" class="d-none">
-                <div class="alert alert-info d-flex align-items-center" role="alert">
-                    <div>
-                        <strong>সংযুক্ত পেজ:</strong> <span id="selectedPageName"></span>
-                    </div>
-                </div>
-
-                <form id="connectForm">
-                    <input type="hidden" id="page_id">
-                    <input type="hidden" id="access_token">
-
-                    <div class="mb-3">
-                        <label for="bot_name" class="form-label">বটের নাম (Bot Name)</label>
-                        <input type="text" class="form-control" id="bot_name" value="AI Assistant" placeholder="যেমন: স্পিডি" required>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="business_info" class="form-label">ব্যবসার তথ্য (Training Data)</label>
-                        <textarea class="form-control" id="business_info" rows="6" required placeholder="আপনার ব্যবসার তথ্য, প্যাকেজ, ঠিকানা, অফার ইত্যাদি বিস্তারিত লিখুন..."></textarea>
-                        <div class="form-text text-muted mt-2">
-                            <small>ℹ️ এই তথ্যের ওপর ভিত্তি করেই এআই গ্রাহকদের প্রশ্নের উত্তর দেবে।</small>
-                        </div>
-                    </div>
-
-                    <!-- Test Chat Section -->
-                    <div class="card mb-4 border-0 shadow-sm">
-                        <div class="card-header bg-white border-bottom-0 pt-3 d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-0 fw-bold">🤖 টেস্ট চ্যাট (Preview)</h6>
-                                <small class="text-muted">সেভ করার আগেই বটের উত্তর যাচাই করুন</small>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearChat()">🗑️ Clear Chat</button>
-                        </div>
-                        <div class="card-body">
-                            <div id="chatBox" class="chat-box mb-3">
-                                <div class="text-center text-muted mt-5"><small>বটের সাথে কথা বলতে নিচে লিখুন...</small></div>
-                            </div>
-                            <div class="input-group">
-                                <input type="text" id="testMsgInput" class="form-control" placeholder="এখানে প্রশ্ন লিখুন..." onkeypress="handleEnter(event)">
-                                <button class="btn btn-secondary" type="button" onclick="sendTestMessage()">পাঠান</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
-                        বট চালু করুন (Start Bot)
-                    </button>
-
-                    <button type="button" class="btn btn-outline-danger w-100" onclick="disconnectPage()">❌ ডিসকানেক্ট করুন (Disconnect Page)</button>
-                </form>
             </div>
 
             <div id="message" class="mt-4 text-center"></div>
@@ -265,6 +219,39 @@
             js.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0";
             fjs.parentNode.insertBefore(js, fjs);
         }(document, 'script', 'facebook-jssdk'));
+
+        // --- Load Connected Pages ---
+        document.addEventListener('DOMContentLoaded', loadConnectedPages);
+
+        async function loadConnectedPages() {
+            try {
+                const response = await fetch('/connected-pages');
+                const pages = await response.json();
+                const list = document.getElementById('connectedPagesList');
+                const section = document.getElementById('connectedPagesSection');
+                
+                list.innerHTML = '';
+                if (pages.length > 0) {
+                    section.classList.remove('d-none');
+                    pages.forEach(page => {
+                        const item = document.createElement('div');
+                        item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        item.innerHTML = `
+                            <div>
+                                <h6 class="mb-0 fw-bold">${page.page_name || 'Unknown Page'}</h6>
+                                <small class="text-muted">Bot: ${page.bot_name} | ID: ${page.page_id}</small>
+                            </div>
+                            <a href="/manage/${page.page_id}" class="btn btn-sm btn-primary">ম্যানেজ করুন</a>
+                        `;
+                        list.appendChild(item);
+                    });
+                } else {
+                    section.classList.add('d-none');
+                }
+            } catch (e) {
+                console.error("Failed to load connected pages", e);
+            }
+        }
 
         // --- Login Logic ---
         function fbLogin() {
@@ -314,10 +301,8 @@
         }
 
         function selectPage(page) {
-            document.getElementById('page_id').value = page.id;
-            document.getElementById('access_token').value = page.access_token;
-            document.getElementById('selectedPageName').innerText = page.name;
-            showStep(3);
+            // Redirect to the manage page for the selected page
+            window.location.href = `/manage/${page.id}`;
         }
 
         function showStep(stepNumber) {
@@ -336,117 +321,6 @@
 
         function resetStep() {
             showStep(1);
-        }
-
-        document.getElementById('connectForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const msgDiv = document.getElementById('message');
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> সেভ হচ্ছে...';
-            msgDiv.innerText = '';
-
-            const data = {
-                page_id: document.getElementById('page_id').value,
-                access_token: document.getElementById('access_token').value,
-                bot_name: document.getElementById('bot_name').value,
-                business_info: document.getElementById('business_info').value
-            };
-
-            try {
-                const response = await fetch('/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    msgDiv.innerHTML = `<div class="alert alert-success">✅ ${result.message}</div>`;
-                    // e.target.reset(); // Don't reset immediately so user can see what they saved
-                } else {
-                    msgDiv.innerHTML = `<div class="alert alert-danger">❌ Error: ${result.error}</div>`;
-                }
-            } catch (error) {
-                msgDiv.innerHTML = `<div class="alert alert-danger">⚠️ Network Error: ${error.message}</div>`;
-            } finally {
-                btn.disabled = false;
-                btn.innerText = 'বট চালু করুন (Start Bot)';
-            }
-        });
-
-        // --- Test Chat Logic ---
-        function handleEnter(e) {
-            if (e.key === 'Enter') sendTestMessage();
-        }
-
-        async function sendTestMessage() {
-            const input = document.getElementById('testMsgInput');
-            const msg = input.value.trim();
-            const businessInfo = document.getElementById('business_info').value;
-            const botName = document.getElementById('bot_name').value;
-            const chatBox = document.getElementById('chatBox');
-
-            if (!msg) return;
-            if (!businessInfo) { alert("দয়া করে আগে ব্যবসার তথ্য পূরণ করুন।"); return; }
-
-            // User Message
-            if (chatBox.querySelector('.text-center')) chatBox.innerHTML = '';
-            chatBox.innerHTML += `<div class="chat-bubble chat-user">${msg}</div>`;
-            input.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            // Loading State
-            const loadingId = 'loading-' + Date.now();
-            chatBox.innerHTML += `<div id="${loadingId}" class="chat-bubble chat-bot">...</div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            try {
-                const response = await fetch('/test-chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: msg, business_info: businessInfo, bot_name: botName })
-                });
-                const data = await response.json();
-                document.getElementById(loadingId).remove();
-                chatBox.innerHTML += `<div class="chat-bubble chat-bot">${data.response || 'Error getting response'}</div>`;
-            } catch (e) {
-                document.getElementById(loadingId).remove();
-                chatBox.innerHTML += `<div class="chat-bubble chat-bot text-danger">Error: ${e.message}</div>`;
-            }
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // --- Disconnect Logic ---
-        async function disconnectPage() {
-            const pageId = document.getElementById('page_id').value;
-            if (!pageId) return;
-
-            if (!confirm("আপনি কি নিশ্চিত যে আপনি এই পেজটি ডিসকানেক্ট করতে চান? এর ফলে বট আর রিপ্লাই দেবে না।")) return;
-
-            try {
-                const response = await fetch('/disconnect', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ page_id: pageId })
-                });
-                if (response.ok) {
-                    alert("পেজ ডিসকানেক্ট করা হয়েছে।");
-                    resetStep();
-                    document.getElementById('connectForm').reset();
-                    document.getElementById('chatBox').innerHTML = '<div class="text-center text-muted mt-5"><small>বটের সাথে কথা বলতে নিচে লিখুন...</small></div>';
-                } else {
-                    alert("ডিসকানেক্ট করতে সমস্যা হয়েছে।");
-                }
-            } catch (e) {
-                alert("Network Error: " + e.message);
-            }
-        }
-
-        function clearChat() {
-            document.getElementById('chatBox').innerHTML = '<div class="text-center text-muted mt-5"><small>বটের সাথে কথা বলতে নিচে লিখুন...</small></div>';
         }
     </script>
 </body>

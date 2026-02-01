@@ -100,6 +100,13 @@ def init_db():
     except psycopg2.errors.DuplicateColumn:
         conn.rollback()
 
+    try:
+        cursor.execute('ALTER TABLE companies ADD COLUMN page_name TEXT')
+    except psycopg2.errors.DuplicateColumn:
+        conn.rollback()
+    else:
+        conn.commit()
+
     conn.commit()
     conn.close()
 
@@ -113,6 +120,7 @@ def seed_db():
             if resp.status_code == 200:
                 page_data = resp.json()
                 page_id = page_data.get("id")
+                page_name = page_data.get("name", "Unknown Page")
                 
                 # ট্রেনিং ডাটা লোড করা
                 business_info = "স্পিড নেট সম্পর্কিত তথ্য পাওয়া যায়নি।"
@@ -126,10 +134,10 @@ def seed_db():
                 cursor = conn.cursor()
                 # যদি কোম্পানি না থাকে তবেই ইনসার্ট করবে
                 cursor.execute('''
-                    INSERT INTO companies (page_id, access_token, business_info, bot_name)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO companies (page_id, access_token, business_info, bot_name, page_name)
+                    VALUES (%s, %s, %s, %s, %s)
                     ON CONFLICT (page_id) DO NOTHING
-                ''', (page_id, default_token, business_info, "স্পিড নেট"))
+                ''', (page_id, default_token, business_info, "স্পিড নেট", page_name))
                 conn.commit()
                 conn.close()
                 logging.info(f"Default company seeded: {page_data.get('name')} ({page_id})")
@@ -675,6 +683,33 @@ def disconnect_page():
     conn.close()
     return jsonify({"status": "success", "message": "Page disconnected successfully."}), 200
 
+@app.route("/manage/<page_id>")
+def manage_page(page_id):
+    """Specific dashboard page for a connected page"""
+    return render_template("manage.html", app_id=FACEBOOK_APP_ID, page_id=page_id)
+
+@app.route("/api/company/<page_id>")
+def get_company_api(page_id):
+    """Returns config for a specific page to populate the dashboard"""
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute('SELECT business_info, bot_name, page_name FROM companies WHERE page_id = %s', (page_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return jsonify(row)
+    return jsonify({}), 404
+
+@app.route("/connected-pages")
+def connected_pages():
+    """Returns list of connected pages"""
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute('SELECT page_id, page_name, bot_name FROM companies ORDER BY id DESC')
+    pages = cursor.fetchall()
+    conn.close()
+    return jsonify(pages)
+
 # --- Admin Route for SaaS (Optional) ---
 @app.route("/register", methods=["POST"])
 def register_company():
@@ -684,6 +719,7 @@ def register_company():
     access_token = data.get("access_token")
     business_info = data.get("business_info")
     bot_name = data.get("bot_name", "AI Assistant")
+    page_name = data.get("page_name", "Unknown Page")
     
     if not all([page_id, access_token, business_info]):
         return jsonify({"error": "Missing fields"}), 400
@@ -692,9 +728,9 @@ def register_company():
     cursor = conn.cursor()
     try:
         cursor.execute('''
-            INSERT INTO companies (page_id, access_token, business_info, bot_name) VALUES (%s, %s, %s, %s)
-            ON CONFLICT (page_id) DO UPDATE SET access_token = EXCLUDED.access_token, business_info = EXCLUDED.business_info, bot_name = EXCLUDED.bot_name
-        ''', (page_id, access_token, business_info, bot_name))
+            INSERT INTO companies (page_id, access_token, business_info, bot_name, page_name) VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (page_id) DO UPDATE SET access_token = EXCLUDED.access_token, business_info = EXCLUDED.business_info, bot_name = EXCLUDED.bot_name, page_name = EXCLUDED.page_name
+        ''', (page_id, access_token, business_info, bot_name, page_name))
         conn.commit()
 
         # --- অটোমেটিক সাবস্ক্রিপশন লজিক ---
